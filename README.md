@@ -89,7 +89,6 @@ En Doc: [https://github.com/Dreamroute/locker/wiki/English-Documet](https://gith
 	3、数据库连接信息在mybatis-config.xml文件中修改，改成你自己的数据库信息；
 	4、直接运行com.mook.locker.misc.test.mapper下面的各个测试方法，观察控制台输出结果；
 	5、在调用每个test方法之前先将数据库的数据id设置为100，version设置成为100，其他字段随意；
-	6、其实就是junit测试
 
 ----------
 
