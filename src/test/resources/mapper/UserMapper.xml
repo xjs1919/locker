@@ -18,7 +18,12 @@
 		update smart_user set name = #{name}, password = #{password}, version = #{version} where id = #{id}
 	</update>
 	
-	<update id="resetData">
-		update smart_user set name = #{name}, password = #{password}, version = #{version} where id = #{id}
-	</update>
+	<insert id="initData" parameterType="com.mook.locker.misc.domain.User">
+		insert into smart_user(id, name, password, version)values(#{id}, #{name}, #{password}, #{version})
+	</insert>
+	
+	<delete id="resetData">
+		delete from smart_user where id = #{id}
+	</delete>
+	
 </mapper>

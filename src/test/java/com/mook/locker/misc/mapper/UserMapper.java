@@ -25,7 +25,9 @@ public interface UserMapper {
 	@VersionLocker(false)
 	Integer updateUserNoVersionLocker(User user);
 
+	// 初始化数据库数据
+	void initData(User user);
+	
 	// 重置数据库数据
-	@VersionLocker(false)
 	void resetData(User user);
 }

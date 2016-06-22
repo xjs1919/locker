@@ -1,25 +1,17 @@
 /**
- * The MIT License (MIT)
+ *    Copyright 2009-2015 the original author or authors.
  *
- * Copyright (c) 2016 342252328@qq.com
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
  */
 package com.mook.locker.interceptor;
 
@@ -33,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.ibatis.binding.BindingException;
 import org.apache.ibatis.binding.MapperMethod;
 import org.apache.ibatis.executor.parameter.ParameterHandler;
 import org.apache.ibatis.executor.statement.StatementHandler;
@@ -61,6 +54,13 @@ import com.mook.locker.cache.LocalVersionLockerCache;
 import com.mook.locker.cache.VersionLockerCache;
 import com.mook.locker.util.PluginUtil;
 
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.LongValue;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.update.Update;
+
 /**
  * <p>MyBatis乐观锁插件<br>
  * <p>MyBatis Optimistic Locker Plugin<br>
@@ -72,7 +72,7 @@ import com.mook.locker.util.PluginUtil;
  *
  */
 @Intercepts({
-	@Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class}),
+	@Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class}),
 	@Signature(type = ParameterHandler.class, method = "setParameters", args = {PreparedStatement.class})
 })
 public class OptimisticLocker implements Interceptor {
@@ -80,9 +80,12 @@ public class OptimisticLocker implements Interceptor {
 	private static final Log log = LogFactory.getLog(OptimisticLocker.class);
 	
 	private static VersionLocker trueLocker;
+	private static VersionLocker falseLocker;
+	
 	static {
 		try {
-			trueLocker = OptimisticLocker.class.getDeclaredMethod("versionValue").getAnnotation(VersionLocker.class);
+			trueLocker = OptimisticLocker.class.getDeclaredMethod("versionValueTrue").getAnnotation(VersionLocker.class);
+			falseLocker = OptimisticLocker.class.getDeclaredMethod("versionValueFalse").getAnnotation(VersionLocker.class);
 		} catch (NoSuchMethodException | SecurityException e) {
 			throw new RuntimeException("The plugin init faild.", e);
 		}
@@ -93,17 +96,23 @@ public class OptimisticLocker implements Interceptor {
 	Map<String, Class<?>> mapperMap = null;
 	
 	@VersionLocker(true)
-	private void versionValue() {}
+	private void versionValueTrue() {}
+	
+	@VersionLocker(false)
+	private void versionValueFalse() {}
 	
 	@Override
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Object intercept(Invocation invocation) throws Exception {
 		
 		String versionColumn;
+		String versionField;
 		if(null == props || props.isEmpty()) {
 			versionColumn = "version";
+			versionField = "version";
 		} else {
 			versionColumn = props.getProperty("versionColumn", "version");
+			versionField = props.getProperty("versionField", "version");
 		}
 		
 		String interceptMethod = invocation.getMethod().getName();
@@ -124,12 +133,23 @@ public class OptimisticLocker implements Interceptor {
 			if(null != vl && !vl.value()) {
 				return invocation.proceed();
 			}
-			
-			Object originalVersion = hm.getValue("delegate.boundSql.parameterObject." + versionColumn);
+	
+			//Object originalVersion = hm.getValue("delegate.boundSql.parameterObject.version");
+			Object originalVersion = hm.getValue("delegate.boundSql.parameterObject."+versionField);
+			if(originalVersion == null || Long.parseLong(originalVersion.toString()) <= 0){
+				throw new BindingException("value of version field[" + versionField + "]can not be empty");
+			}
 			Object versionIncr = castTypeAndOptValue(originalVersion, hm.getValue("delegate.boundSql.parameterObject"), ValueType.INCREASE);
-			hm.setValue("delegate.boundSql.parameterObject." + versionColumn, versionIncr);
+			//hm.setValue("delegate.boundSql.parameterObject.version", versionIncr);
+			hm.setValue("delegate.boundSql.parameterObject."+versionField, versionIncr);
 			
 			String originalSql = (String) hm.getValue("delegate.boundSql.sql");
+			if(log.isDebugEnabled()) {
+				log.debug("==> originalSql: " + originalSql);
+			}
+			
+			originalSql = addVersionToSql(originalSql, versionColumn, versionIncr);
+			
 			StringBuilder builder = new StringBuilder(originalSql);
 			builder.append(" and ");
 			builder.append(versionColumn);
@@ -137,7 +157,7 @@ public class OptimisticLocker implements Interceptor {
 			hm.setValue("delegate.boundSql.sql", builder.toString());
 			
 			if(log.isDebugEnabled()) {
-				log.debug("==> originalSql: " + originalSql);
+				log.debug("==> originalSql after add version: " + builder.toString());
 			}
 			
 			return invocation.proceed();
@@ -170,11 +190,11 @@ public class OptimisticLocker implements Interceptor {
 			MetaObject pm = configuration.newMetaObject(parameterObject);
 			if(parameterObject instanceof MapperMethod.ParamMap<?>) {
 				MapperMethod.ParamMap<?> paramMap = (MapperMethod.ParamMap<?>) parameterObject;
-				if(!paramMap.containsKey(versionColumn)) {
+				if(!paramMap.containsKey(versionField)) {
 					throw new TypeException("All the base type parameters must add MyBatis's @Param Annotaion");
 				}
 			}
-	        Object value = pm.getValue(versionColumn);
+	        Object value = pm.getValue(versionField);
 			TypeHandler typeHandler = versionMapping.getTypeHandler();
 	        JdbcType jdbcType = versionMapping.getJdbcType();
 	        
@@ -194,6 +214,36 @@ public class OptimisticLocker implements Interceptor {
 	 		return result;
 		}
 		return invocation.proceed();
+	}
+	
+	private String addVersionToSql(String originalSql, String versionColumnName, Object versionIncr){
+		try{
+			Statement stmt = CCJSqlParserUtil.parse(originalSql);
+			if(!(stmt instanceof Update)){
+				return originalSql;
+			}
+			Update update = (Update)stmt;
+			List<Column> columns = update.getColumns();
+			boolean find = false;
+			for(Column column : columns){
+				if(column.getColumnName().equalsIgnoreCase(versionColumnName)){
+					find = true;
+					break;
+				}
+			}
+			if(!find){
+				Column versionColumn = new Column();
+				versionColumn.setColumnName(versionColumnName);
+				columns.add(versionColumn);
+				List<Expression> expressions = update.getExpressions();
+				LongValue val = new LongValue(versionIncr.toString());
+				expressions.add(val);
+			}
+			return stmt.toString();
+		}catch(Exception e){
+			e.printStackTrace();
+			return originalSql;
+		}
 	}
 
 	private Object castTypeAndOptValue(Object value, Object parameterObject, ValueType vt) {
@@ -238,9 +288,14 @@ public class OptimisticLocker implements Interceptor {
 			
 		// 2、处理Map类型参数
 		// 2、Process Map param
-		} else if (paramObj instanceof Map) {
-			paramCls = new Class<?>[] {Map.class};
-			
+		} else if (paramObj instanceof Map) {//不支持批量
+			@SuppressWarnings("rawtypes")
+			Map map = (Map)paramObj;
+			if(map.get("list") != null || map.get("array") != null){
+				return falseLocker;
+			}else{
+				paramCls = new Class<?>[] {Map.class};
+			}
 		// 3、处理POJO实体对象类型的参数
 		// 3、Process POJO entity param
 		} else {

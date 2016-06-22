@@ -1,7 +1,9 @@
 package com.mook.locker.misc.test.mapper;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.binding.BindingException;
@@ -15,13 +17,13 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.mook.locker.misc.domain.User;
-import com.mook.locker.misc.mapper.UserMapper;
+import com.mook.locker.misc.domain.User2;
+import com.mook.locker.misc.mapper.UserMapper2;
 
-public class UserMapperTest {
+public class UserMapperTest2 {
 	
 	private static SqlSession sqlSession = null;
-	private User user = new User();
+	private User2 user = new User2();
 	
 	@BeforeClass
 	public static void doInitTest() throws Exception {
@@ -36,8 +38,8 @@ public class UserMapperTest {
 		user.setId(100);
 		user.setName("test");
 		user.setPassword("test");
-		user.setVersion(100L);
-		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		user.setMyVersion(100L);
+		UserMapper2 userMapper = sqlSession.getMapper(UserMapper2.class);
 		userMapper.initData(user);
 	}
 	
@@ -46,14 +48,14 @@ public class UserMapperTest {
 		user.setId(100);
 		user.setName("test");
 		user.setPassword("test");
-		user.setVersion(100L);
-		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		user.setMyVersion(100L);
+		UserMapper2 userMapper = sqlSession.getMapper(UserMapper2.class);
 		userMapper.resetData(user);
 	}
-	
+
 	@Test
 	public void updateUserPojoTest() {
-		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		UserMapper2 userMapper = sqlSession.getMapper(UserMapper2.class);
 		Integer result = userMapper.updateUser(user);
 		Assert.assertEquals(1L, Long.parseLong(result + ""));
 		
@@ -66,7 +68,7 @@ public class UserMapperTest {
 	
 	@Test
 	public void updateUserAtParamTest() {
-		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		UserMapper2 userMapper = sqlSession.getMapper(UserMapper2.class);
 		Integer result = userMapper.updateUser("test", "test", 100L, 100);
 		Assert.assertEquals(1L, Long.parseLong(result + ""));
 		
@@ -78,41 +80,60 @@ public class UserMapperTest {
 	}
 	
 	@Test
+	public void updateUserParamPojoTest() {
+		UserMapper2 userMapper = sqlSession.getMapper(UserMapper2.class);
+		Integer result = userMapper.updateUser3(user);
+		Assert.assertEquals(1L, Long.parseLong(result + ""));
+	}
+	
+	@Test
 	public void updateUserMapTest() {
 		Map<Object, Object> param = new HashMap<>();
 		param.put("name", "test");
 		param.put("password", "test");
-		param.put("version", 100L);
+		param.put("myVersion", 100L);
 		param.put("id", 100);
-		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		UserMapper2 userMapper = sqlSession.getMapper(UserMapper2.class);
 		Integer result = userMapper.updateUser(param);
 		Assert.assertEquals(1L, Long.parseLong(result + ""));
 		
-//		打印结果如下：
-//		DEBUG - ==> originalSql: update smart_user set name = ?, password = ?, version = ? where id = ?
-//		DEBUG - ==>  Preparing: update smart_user set name = ?, password = ?, version = ? where id = ? and version = ? 
-//		DEBUG - ==> Parameters: test(String), test(String), 101(Long), 100(Integer), 100(Long)
-//		DEBUG - <==    Updates: 1
 	}
 	
 	@Test(expected = BindingException.class)
 	public void updateUserErrorTest() {
-		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		UserMapper2 userMapper = sqlSession.getMapper(UserMapper2.class);
 		Integer result = userMapper.updateUserError("test", "test", 100L, 100);
 		Assert.assertEquals(1L, Long.parseLong(result + ""));
 	}
 	
 	@Test
 	public void updateUserNoVersionLockerTest() {
-		UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+		UserMapper2 userMapper = sqlSession.getMapper(UserMapper2.class);
 		Integer result = userMapper.updateUserNoVersionLocker(user);
 		Assert.assertEquals(1L, Long.parseLong(result + ""));
-		
-//		打印结果如下，原生sql未被修改：
-//		DEBUG - ==>  Preparing: update smart_user set name = ?, password = ?, version = ? where id = ? 
-//		DEBUG - ==> Parameters: test(String), test(String), 100(Long), 100(Integer)
-//		DEBUG - <==    Updates: 1
 
 	}
+	
+	@Test
+	public void updateUserListTest() {
+		UserMapper2 userMapper = sqlSession.getMapper(UserMapper2.class);
+		List<User2> userlist = new ArrayList<User2>();
+		
+		User2 user2 = new User2();
+		user2.setId(101);
+		user2.setName("test");
+		user2.setPassword("test");
+		user2.setMyVersion(100L);
+		
+		
+		userlist.add(user);
+		userlist.add(user2);
+		
+		Integer result = userMapper.updateUserList(userlist);
+		Assert.assertEquals(1L, Long.parseLong(result + ""));
+	
+	}
+	
+	
 	
 }
