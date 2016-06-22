@@ -83,20 +83,7 @@ En Doc: [https://github.com/Dreamroute/locker/wiki/English-Documet](https://gith
 	如果您有什么建议或者意见，欢迎留言，也欢迎pull request，作者会将你优秀的思想加入到插件里面来，为其他人更好的解决问题。
 
 ----------
-### 8.Demo ###
-	1、在数据库中建立表，表名smart_user(可以按照你自己的)；
-	2、表的字段为id(int)，name(varchar)，password(varchar)，version(bigint)；
-	3、数据库连接信息在mybatis-config.xml文件中修改，改成你自己的数据库信息；
-	4、直接运行com.mook.locker.misc.test.mapper下面的各个测试方法，观察控制台输出结果；
-	5、在调用每个test方法之前先将数据库的数据id设置为100，version设置成为100，其他字段随意；
 
-----------
-
-### 9.强烈推荐： ###
-	1.mybatis-spring，和spring整合，利用spring的各种优良机制；
-	2.通用Mapper和PageHelper物理分页插件，地址为：http://mybatis.tk，利用插件的单表CRUD动态创建能力；
-	3.集齐这4个mybatis插件，可以达到与Hibernate，JPA媲美的开发效率，但是性能又优于Hibernate；
-
-### 10.关于作者： ###
+### 8.关于作者： ###
 	作者QQ：342252328
 	作者邮箱：342252328@qq.com
