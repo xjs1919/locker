@@ -24,7 +24,7 @@ En Doc: [https://github.com/Dreamroute/locker/wiki/English-Documet](https://gith
 ----------
 ### 1. 使用方式：在mybatis配置文件中加入如下配置，就完成了。 ###
 	<plugins>
-		<plugin interceptor="com.mook.locker.interceptor.OptimisticLocker"/>
+		<plugin interceptor="com.chrhc.mybatis.locker.interceptor.OptimisticLocker"/>
 	</plugins>
 
 ----------
@@ -34,7 +34,7 @@ En Doc: [https://github.com/Dreamroute/locker/wiki/English-Documet](https://gith
 上面对插件的配置默认数据库的乐观锁列对应的Java属性为version。这里可以自定义属性命，例如：
 
 	<plugins>
-		<plugin interceptor="com.mook.locker.interceptor.OptimisticLocker">
+		<plugin interceptor="com.chrhc.mybatis.locker.interceptor.OptimisticLocker">
 			<property name="versionColumn" value="xxx"/><!--数据库的列名-->
 			<property name="versionField" value="xxx"/> <!--java字段名-->
 		</plugin>
