@@ -15,7 +15,6 @@
 ----------
 
 ## Document: ##
-En Doc: [https://github.com/Dreamroute/locker/wiki/English-Documet](https://github.com/Dreamroute/locker/wiki/English-Documet "en")<br />
 	
 ----------
 
