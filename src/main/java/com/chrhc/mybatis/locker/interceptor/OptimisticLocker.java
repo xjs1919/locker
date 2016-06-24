@@ -38,17 +38,17 @@ import org.apache.ibatis.plugin.Plugin;
 import org.apache.ibatis.plugin.Signature;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
-import org.apache.ibatis.type.TypeException;
 
 import com.chrhc.mybatis.locker.annotation.VersionLocker;
 import com.chrhc.mybatis.locker.cache.Cache;
+import com.chrhc.mybatis.locker.cache.Cache.MethodSignature;
 import com.chrhc.mybatis.locker.cache.LocalVersionLockerCache;
 import com.chrhc.mybatis.locker.cache.VersionLockerCache;
-import com.chrhc.mybatis.locker.cache.Cache.MethodSignature;
 import com.chrhc.mybatis.locker.util.PluginUtil;
 
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.LongValue;
+import net.sf.jsqlparser.expression.operators.arithmetic.Addition;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
@@ -119,17 +119,15 @@ public class OptimisticLocker implements Interceptor {
 		if(null != vl && !vl.value()) {
 			return invocation.proceed();
 		}
-		Object parameterObject = metaObject.getValue("delegate.boundSql.parameterObject");  
 		Object originalVersion = metaObject.getValue("delegate.boundSql.parameterObject."+versionField);
 		if(originalVersion == null || Long.parseLong(originalVersion.toString()) <= 0){
 			throw new BindingException("value of version field[" + versionField + "]can not be empty");
 		}
-		Object versionIncr = castTypeAndOptValue(originalVersion, parameterObject, ValueType.INCREASE);
 		String originalSql = boundSql.getSql();
 		if(log.isDebugEnabled()) {
 			log.debug("==> originalSql: " + originalSql);
 		}
-		originalSql = addVersionToSql(originalSql, versionColumn, originalVersion, versionIncr);
+		originalSql = addVersionToSql(originalSql, versionColumn, originalVersion);
 		metaObject.setValue("delegate.boundSql.sql", originalSql);
 		if(log.isDebugEnabled()) {
 			log.debug("==> originalSql after add version: " + originalSql);
@@ -137,7 +135,7 @@ public class OptimisticLocker implements Interceptor {
 		return invocation.proceed();
 	}
 	
-	private String addVersionToSql(String originalSql, String versionColumnName, Object originalVersion, Object versionIncr){
+	private String addVersionToSql(String originalSql, String versionColumnName, Object originalVersion){
 		try{
 			Statement stmt = CCJSqlParserUtil.parse(originalSql);
 			if(!(stmt instanceof Update)){
@@ -145,7 +143,7 @@ public class OptimisticLocker implements Interceptor {
 			}
 			Update update = (Update)stmt;
 			if(!contains(update, versionColumnName)){
-				buildVersionExpression(update, versionColumnName, versionIncr);
+				buildVersionExpression(update, versionColumnName);
 			}
 			Expression where = update.getWhere();
 			if(where != null){
@@ -171,14 +169,18 @@ public class OptimisticLocker implements Interceptor {
 		return false;
 	}
 	
-	private void buildVersionExpression(Update update,String versionColumnName,Object versionIncr){
+	private void buildVersionExpression(Update update,String versionColumnName){
+		
 		List<Column> columns = update.getColumns();
 		Column versionColumn = new Column();
 		versionColumn.setColumnName(versionColumnName);
 		columns.add(versionColumn);
+		
 		List<Expression> expressions = update.getExpressions();
-		LongValue val = new LongValue(versionIncr.toString());
-		expressions.add(val);
+		Addition add = new Addition();
+		add.setLeftExpression(versionColumn);
+		add.setRightExpression(new LongValue(1));
+		expressions.add(add);
 	}
 	
 	private Expression buildVersionEquals(String versionColumnName, Object originalVersion){
@@ -191,26 +193,6 @@ public class OptimisticLocker implements Interceptor {
 		return equal;
 	}
 
-	private Object castTypeAndOptValue(Object value, Object parameterObject, ValueType vt) {
-		Class<?> valType = value.getClass();
-		if(valType == Long.class || valType == long.class) {
-			return (Long) value + vt.value;
-		} else if(valType == Integer.class || valType == int.class) {
-			return (Integer) value + vt.value;
-		} else if(valType == Float.class || valType == float.class) {
-			return (Float) value + vt.value;
-		} else if(valType == Double.class || valType == double.class) {
-			return (Double) value + vt.value;
-		} else {
-			if(parameterObject instanceof MapperMethod.ParamMap<?>) {
-				throw new TypeException("All the base type parameters must add MyBatis's @Param Annotaion");
-			} else {
-				throw new  TypeException("Property 'version' in " + parameterObject.getClass().getSimpleName() + 
-						" must be [ long, int, float, double ] or [ Long, Integer, Float, Double ]");
-			}
-		}
-	}
-	
 	private VersionLocker getVersionLocker(MappedStatement ms, BoundSql boundSql) {
 		
 		Class<?>[] paramCls = null;
@@ -310,16 +292,6 @@ public class OptimisticLocker implements Interceptor {
 	@Override
 	public void setProperties(Properties properties) {
 		if(null != properties && !properties.isEmpty()) props = properties;
-	}
-	
-	private enum ValueType {
-		INCREASE(1), DECREASE(-1);
-		
-		private Integer value;
-		
-		private ValueType(Integer value) {
-			this.value = value;
-		}
 	}
 
 }

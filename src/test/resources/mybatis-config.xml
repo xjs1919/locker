@@ -5,7 +5,7 @@
 <configuration>
 
 	<plugins>
-		<plugin interceptor="com.mook.locker.interceptor.OptimisticLocker">
+		<plugin interceptor="com.chrhc.mybatis.locker.interceptor.OptimisticLocker">
 			<property name="versionField" value="myVersion"/>
 			<property name="versionColumn" value="my_version"/>
 		</plugin>
