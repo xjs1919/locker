@@ -38,7 +38,7 @@ public class UserMapperTest2 {
 		user.setId(100);
 		user.setName("test");
 		user.setPassword("test");
-		user.setMyVersion(100L);
+		user.setMyVersion(1024L);
 		UserMapper2 userMapper = sqlSession.getMapper(UserMapper2.class);
 		userMapper.initData(user);
 	}
@@ -56,6 +56,7 @@ public class UserMapperTest2 {
 	@Test
 	public void updateUserPojoTest() {
 		UserMapper2 userMapper = sqlSession.getMapper(UserMapper2.class);
+		user.setName("name");
 		Integer result = userMapper.updateUser(user);
 		Assert.assertEquals(1L, Long.parseLong(result + ""));
 		
@@ -69,7 +70,7 @@ public class UserMapperTest2 {
 	@Test
 	public void updateUserAtParamTest() {
 		UserMapper2 userMapper = sqlSession.getMapper(UserMapper2.class);
-		Integer result = userMapper.updateUser("test", "test", 100L, 100);
+		Integer result = userMapper.updateUser("name", "pass", 1024L, 100);
 		Assert.assertEquals(1L, Long.parseLong(result + ""));
 		
 //		打印结果如下：
@@ -91,7 +92,7 @@ public class UserMapperTest2 {
 		Map<Object, Object> param = new HashMap<>();
 		param.put("name", "test");
 		param.put("password", "test");
-		param.put("myVersion", 100L);
+		param.put("myVersion", 1024L);
 		param.put("id", 100);
 		UserMapper2 userMapper = sqlSession.getMapper(UserMapper2.class);
 		Integer result = userMapper.updateUser(param);

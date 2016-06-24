@@ -2,16 +2,15 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.mook</groupId>
-	<artifactId>optimisticLocker</artifactId>
+	<groupId>com.chrhc.mybatis</groupId>
+	<artifactId>optimisticlocker</artifactId>
 	<version>0.0.1</version>
 	<packaging>jar</packaging>
 
   <name>locker</name>
-  <url>https://github.com/Dreamroute/locker</url>
+  <url>https://github.com/xjs1919/locker</url>
 
   <dependencies>
-		<!-- http://mvnrepository.com/artifact/org.mybatis/mybatis -->
 		<dependency>
 			<groupId>org.mybatis</groupId>
 			<artifactId>mybatis</artifactId>

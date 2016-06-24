@@ -21,11 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mook.locker.cache;
+package com.chrhc.mybatis.locker.cache;
 
 import java.util.Arrays;
 
-import com.mook.locker.annotation.VersionLocker;
+import com.chrhc.mybatis.locker.annotation.VersionLocker;
 
 public interface Cache<T> {
 	

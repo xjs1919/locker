@@ -21,31 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mook.locker.util;
+package com.chrhc.mybatis.locker.annotation;
 
-import java.lang.reflect.Proxy;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import org.apache.ibatis.reflection.MetaObject;
-import org.apache.ibatis.reflection.SystemMetaObject;
-
-public final class PluginUtil {
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD})
+public @interface VersionLocker {
 	
-	private PluginUtil() {} // private constructor
-	
-	/**
-	 * <p>Recursive get the original target object.
-	 * <p>If integrate more than a plugin, maybe there are conflict in these plugins, because plugin will proxy the object.<br>
-	 * So, here get the orignal target object
-	 * 
-	 * @param target proxy-object
-	 * @return original target object
-	 */
-	public static Object processTarget(Object target) {
-		if(Proxy.isProxyClass(target.getClass())) {
-			MetaObject mo = SystemMetaObject.forObject(target);
-			return processTarget(mo.getValue("h.target"));
-		}
-		return target;
-	}
-	
+	// Plugin intercepte update method by default, but except marked by @VersionLocker(false)
+	boolean value() default true;
 }

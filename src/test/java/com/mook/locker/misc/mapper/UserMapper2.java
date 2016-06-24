@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.apache.ibatis.annotations.Param;
 
-import com.mook.locker.annotation.VersionLocker;
+import com.chrhc.mybatis.locker.annotation.VersionLocker;
 import com.mook.locker.misc.domain.User2;
 
 public interface UserMapper2 {

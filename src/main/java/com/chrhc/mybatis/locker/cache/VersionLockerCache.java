@@ -21,32 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.mook.locker.exception;
+package com.chrhc.mybatis.locker.cache;
 
-/**
- * Created by wyx on 2016/6/1.
- */
-public class UncachedMapperException extends Exception {
-	
-	private static final long serialVersionUID = -3239029321039349523L;
+import com.chrhc.mybatis.locker.annotation.VersionLocker;
 
-	public UncachedMapperException() {
-        super();
-    }
-
-    public UncachedMapperException(String message) {
-        super(message);
-    }
-
-    public UncachedMapperException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public UncachedMapperException(Throwable cause) {
-        super(cause);
-    }
-
-    protected UncachedMapperException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
-}
+public interface VersionLockerCache extends Cache<VersionLocker> {}
