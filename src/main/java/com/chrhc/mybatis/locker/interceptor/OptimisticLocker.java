@@ -38,6 +38,7 @@ import org.apache.ibatis.plugin.Plugin;
 import org.apache.ibatis.plugin.Signature;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
+import org.hamcrest.Factory;
 
 import com.chrhc.mybatis.locker.annotation.VersionLocker;
 import com.chrhc.mybatis.locker.cache.Cache;
@@ -73,6 +74,8 @@ public class OptimisticLocker implements Interceptor {
 	
 	private static VersionLocker trueLocker;
 	private static VersionLocker falseLocker;
+	
+	private boolean forceLock;
 	
 	static {
 		try {
@@ -195,6 +198,9 @@ public class OptimisticLocker implements Interceptor {
 
 	private VersionLocker getVersionLocker(MappedStatement ms, BoundSql boundSql) {
 		
+		
+		
+		
 		Class<?>[] paramCls = null;
 		Object paramObj = boundSql.getParameterObject();
 		
@@ -244,8 +250,14 @@ public class OptimisticLocker implements Interceptor {
 				throw new RuntimeException("The Map type param error." + e, e);
 			}
 			versionLocker = m.getAnnotation(VersionLocker.class);
+			
 			if(null == versionLocker) {
+				if(forceLock){
 				versionLocker = trueLocker;
+			}
+				else{
+					versionLocker =falseLocker ;
+				}
 			}
 			if(!versionLockerCache.containMethodSignature(vm)) {
 				versionLockerCache.cacheMethod(vm, versionLocker);
@@ -292,6 +304,14 @@ public class OptimisticLocker implements Interceptor {
 	@Override
 	public void setProperties(Properties properties) {
 		if(null != properties && !properties.isEmpty()) props = properties;
+	}
+
+	public boolean isForceLock() {
+		return forceLock;
+	}
+
+	public void setForceLock(boolean forceLock) {
+		this.forceLock = forceLock;
 	}
 
 }
