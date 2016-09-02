@@ -210,6 +210,9 @@ public class OptimisticLocker implements Interceptor {
 				for(int i=0; i<mmpLen; i++) {
 					Object index = mmp.get("param" + (i + 1));
 					paramCls[i] = index.getClass();
+					if(List.class.isAssignableFrom(paramCls[i])){
+						return falseLocker;
+					}
 				}
 			}
 			
